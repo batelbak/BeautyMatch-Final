@@ -42,12 +42,12 @@ const RequestAccessPage = () => {
 
         setLoading(true);
         try {
-            const res = await api.post('/users/signup', {
-                firstName: form.firstName.trim(),
-                lastName: form.lastName.trim(),
-                email: form.email.trim(),
-                password: form.password,
+            const res = await api.post('/users/register', {
+              name: `${form.firstName.trim()} ${form.lastName.trim()}`,
+              email: form.email.trim(),
+              password: form.password,
             });
+
 
             const source = res.data?.data || res.data?.user || res.data || {};
             const userToSave = {

@@ -87,7 +87,7 @@ const AdminDashboard = () => {
 
   const openEdit = (type, row) => {
     setModalType(type);
-    setEditingId(type === 'user' ? row.userId : (row._id || row.id));
+    setEditingId(type === 'user' ? (row.id || row.userId) : (row._id || row.id));
 
     if (type === 'product') {
       setFormData({
@@ -98,15 +98,19 @@ const AdminDashboard = () => {
         description: row.description || '',
       });
     } else {
+      const fullName = (row.name || '').trim().split(' ');
       setFormData({
-        firstName: row.firstName || '',
-        lastName: row.lastName || '',
+        firstName: row.firstName || fullName[0] || '',
+        lastName: row.lastName || fullName.slice(1).join(' ') || '',
         email: row.email || '',
-        userRole: row.userRole || 'user',
+        userRole: row.role || row.userRole || 'customer',
+        password: '',
       });
     }
+
     setModalOpen(true);
   };
+
 
   const closeModal = () => {
     setModalOpen(false);
@@ -132,14 +136,14 @@ const AdminDashboard = () => {
       };
     }
     const payload = {
-      firstName: (formData.firstName || '').trim(),
-      lastName: (formData.lastName || '').trim(),
+      name: `${(formData.firstName || '').trim()} ${(formData.lastName || '').trim()}`.trim(),
       email: (formData.email || '').trim(),
-      userRole: formData.userRole || 'user',
+      role: formData.userRole === 'logistics' ? 'logistics' : 'customer',
     };
     if (formData.password?.length > 0) payload.password = formData.password;
     return payload;
-  };
+    };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -259,7 +263,7 @@ const userColumns = [
                   <label>Email<input name="email" type="email" value={formData.email || ''} onChange={handleChange} required readOnly onFocus={(e) => e.target.removeAttribute('readonly')} /></label>
                   <label>Role
                     <select name="userRole" value={formData.userRole || 'user'} onChange={handleChange} disabled={formData.userRole === 'admin'}>
-                      <option value="user">user</option>
+                      <option value="customer">customer</option>
                       <option value="logistics">logistics</option>
                     </select>
                   </label>

@@ -2,6 +2,7 @@ const router = require('express').Router();
 const c = require('../controllers/userController');
 
 router.post('/register', c.register);
+router.post('/', c.register);
 router.post('/login', c.login);
 router.get('/', c.getAll);
 router.get('/:id', c.getById);
