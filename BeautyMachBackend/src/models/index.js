@@ -1,5 +1,6 @@
 const sequelize = require('../config/database');
 const User = require('./User');
+const Admin = require('./Admin');
 const Product = require('./Product');
 const Order = require('./Order');
 const OrderItem = require('./OrderItem');
@@ -30,4 +31,4 @@ Product.belongsToMany(User, {
   as: 'buyers',
 });
 
-module.exports = { sequelize, User, Product, Order, OrderItem };
+module.exports = { sequelize, User, Admin, Product, Order, OrderItem };

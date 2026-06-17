@@ -1,4 +1,6 @@
 // src/pages/AdminDashboard.js
+
+import socket, { connectSocket } from '../services/socket';
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
@@ -14,6 +16,27 @@ const EMPTY_USER = { firstName: '', lastName: '', email: '', userRole: 'user', p
  * Provides CRUD operations for products and user management functionalities.
  */
 const AdminDashboard = () => {
+    useEffect(() => {
+      connectSocket();
+      const onNewOrder = (order) => {
+        console.log('🆕 order:new', order);
+        if (typeof window !== 'undefined') {
+          const banner = document.createElement('div');
+          banner.textContent = `🛒 הזמנה חדשה #${order.id} – ${order.total}₪`;
+          Object.assign(banner.style, {
+            position: 'fixed', top: '80px', right: '20px', background: '#e91e63',
+            color: '#fff', padding: '12px 18px', borderRadius: '10px', zIndex: 9999,
+            boxShadow: '0 4px 16px rgba(0,0,0,.15)'
+          });
+          document.body.appendChild(banner);
+          setTimeout(() => banner.remove(), 4500);
+        }
+      };
+      socket.on('order:new', onNewOrder);
+      return () => socket.off('order:new', onNewOrder);
+    }, []);
+
+
   const [activeTab, setActiveTab] = useState('inventory');
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
@@ -147,13 +170,17 @@ const AdminDashboard = () => {
       alert('Delete operation failed.');
     }
   };
-
-  const userColumns = [
-    { header: 'First Name', field: 'firstName' },
-    { header: 'Last Name', field: 'lastName' },
+const userColumns = [
+    { header: 'Name', field: 'name' },
     { header: 'Email', field: 'email' },
-    { header: 'Role', field: 'userRole' },
-  ];
+    { header: 'Role', field: 'role' },
+];
+//  const userColumns = [
+//    { header: 'First Name', field: 'firstName' },
+//    { header: 'Last Name', field: 'lastName' },
+//    { header: 'Email', field: 'email' },
+//    { header: 'Role', field: 'userRole' },
+//  ];
 
   return (
     <div className="admin-container">

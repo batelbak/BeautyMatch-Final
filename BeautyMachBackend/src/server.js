@@ -8,6 +8,7 @@ const { sequelize } = require('./models');
 const initSockets = require('./sockets');
 
 const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const aiRoutes = require('./routes/aiRoutes');
@@ -22,6 +23,7 @@ app.set('io', io);
 initSockets(io);
 
 app.use('/api/users', userRoutes);
+app.use('/api/admins', adminRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/ai', aiRoutes);

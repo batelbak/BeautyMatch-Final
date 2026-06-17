@@ -1,6 +1,6 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { sequelize, User, Product } = require('../models');
+const { sequelize, User, Admin, Product } = require('../models');
 
 async function seed() {
   await sequelize.sync({ force: true });
@@ -9,11 +9,16 @@ async function seed() {
   const hash = (pw) => bcrypt.hashSync(pw, 10);
 
   await User.bulkCreate([
-    { name: 'Admin User',     email: 'admin@beauty.com',     password: hash('admin123'),     role: 'admin' },
     { name: 'Logistics User', email: 'logistics@beauty.com', password: hash('logistics123'), role: 'logistics' },
     { name: 'Sara Cohen',     email: 'sara@example.com',     password: hash('sara123'),      role: 'customer', skinType: 'dry', concern: 'wrinkles' },
   ]);
   console.log('✅ Users seeded');
+
+  await Admin.bulkCreate([
+    { name: 'Main Admin', email: 'admin@beauty.com', password: hash('admin123'), permissions: 'super' },
+  ]);
+
+  console.log('✅ Admins seeded!');
 
 await Product.bulkCreate([
     { name: "Velvet Hydrating Cleanser", category: "Cleanser", description: "A rich, cream-to-foam formula infused with Hyaluronic Acid. Designed for dry skin to restore moisture while gently removing impurities.", skinType: "dry", price: 22, imageUrl: "https://i.postimg.cc/Ghh7rwJD/Whats-App-Image-2026-06-01-at-19-47-56-(1).jpg", stock: 50 },

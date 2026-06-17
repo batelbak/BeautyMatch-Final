@@ -1,14 +1,23 @@
--- Run manually with: mysql -u root -p beauty_match < src/migrations/001-initial-schema.sql
--- (or just let Sequelize sync() create the tables on first boot)
+-- Run manually: mysql -u root -p beauty_match < src/migrations/001-initial-schema.sql
 
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   email VARCHAR(150) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  role ENUM('customer','admin','logistics') DEFAULT 'customer',
+  role ENUM('customer','logistics') DEFAULT 'customer',
   skin_type VARCHAR(50),
   concern VARCHAR(100),
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS admins (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  permissions ENUM('super','products','orders') DEFAULT 'super',
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL
 );
