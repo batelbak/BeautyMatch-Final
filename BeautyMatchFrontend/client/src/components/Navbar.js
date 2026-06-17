@@ -1,0 +1,79 @@
+import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+
+/**
+ * Navbar component for navigation and user-specific actions.
+ * Displays user info and cart status.
+ */
+const Navbar = () => {
+    const navigate = useNavigate();
+    const { cart, openCart } = useCart();
+
+    // Retrieve user data from local storage
+    const userString = localStorage.getItem('user');
+    const rawUser = userString ? JSON.parse(userString) : null;
+    const user = rawUser?.user || rawUser;
+
+    const firstName = user?.firstName || '';
+
+    /**
+     * Clears user session and redirects to login
+     */
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new Event('user-changed')); // Triggers cart refresh
+        navigate('/login');
+    };
+
+    const cartCount = cart.length;
+
+    return (
+        <nav className="nb">
+            {/* Left navigation links */}
+            <div className="nb-center">
+                <Link to="/dashboard" className="nb-link">shop</Link>
+                <Link to="/quiz" className="nb-link">skin quiz</Link>
+                <Link to="/settings" className="nb-link">settings</Link>
+            </div>
+
+            {/* Brand Logo */}
+            <Link to="/dashboard" className="nb-brand-wrap">
+                <div className="nb-brand">AI BEAUTY</div>
+                <span className="nb-brand-sub">by Batel & Sapir</span>
+            </Link>
+
+            {/* Right-hand side (Cart, User) */}
+            <div className="nb-right">
+                {firstName && (
+                    <span className="nb-user">
+                        hello, <strong>{firstName}</strong>
+                    </span>
+                )}
+
+                {/* Shopping Bag Button */}
+                <button
+                    onClick={openCart}
+                    className="nb-bag"
+                    aria-label="bag"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: 0 }}
+                >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" strokeWidth="1.4"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 7h12l-1 13H7L6 7z" />
+                        <path d="M9 7a3 3 0 0 1 6 0" />
+                    </svg>
+                    {cartCount > 0 && <span className="nb-bag-count">{cartCount}</span>}
+                </button>
+
+                {user && (
+                    <button onClick={handleLogout} className="nb-logout">logout</button>
+                )}
+            </div>
+        </nav>
+    );
+};
+
+export default Navbar;

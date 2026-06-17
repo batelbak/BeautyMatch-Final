@@ -1,0 +1,68 @@
+/* ===== FLIP CARD COMPONENT ===== */
+
+.card-flip {
+  perspective: 1200px;
+  width: 100%;
+  height: 380px;
+  cursor: pointer;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border: none;
+  display: block;
+}
+
+.card-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+/* Trigger flip animation on parent hover/class toggle */
+.card-flip.is-flipped .card-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.card-flip-front,
+.card-flip-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.card-flip-back {
+  transform: rotateY(180deg);
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f4ff, #fff);
+}
+
+.card-flip-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #444;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.card-flip-hint {
+  margin-top: auto;
+  font-size: 11px;
+  color: #888;
+  opacity: 0.7;
+}

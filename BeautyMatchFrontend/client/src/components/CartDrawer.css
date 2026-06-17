@@ -1,0 +1,153 @@
+/* ===== CART OVERLAY & DRAWER COMPONENT ===== */
+
+/* Overlay background that appears behind the cart */
+.cart-overlay {
+    position: fixed; 
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    opacity: 0; 
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 999;
+}
+
+.cart-overlay.open { 
+    opacity: 1; 
+    pointer-events: auto; 
+}
+
+/* Sidebar cart drawer */
+.cart-drawer {
+    position: fixed; 
+    top: 0; 
+    right: -440px;
+    width: 420px; 
+    max-width: 100vw; 
+    height: 100%;
+    background: #fff;
+    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.15);
+    transition: right 0.35s ease;
+    z-index: 1000;
+    display: flex; 
+    flex-direction: column;
+    font-family: inherit;
+}
+
+.cart-drawer.open { 
+    right: 0; 
+}
+
+/* Drawer Header */
+.drawer-header {
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    padding: 20px 24px; 
+    border-bottom: 1px solid #eee;
+}
+
+.drawer-header h2 { 
+    margin: 0; 
+    font-size: 18px; 
+    font-weight: 500; 
+    letter-spacing: 0.5px; 
+}
+
+.drawer-header .muted { 
+    color: #888; 
+    font-weight: 400; 
+    margin-left: 6px; 
+}
+
+.drawer-close {
+    background: none; 
+    border: none; 
+    font-size: 26px;
+    cursor: pointer; 
+    line-height: 1; 
+    color: #333;
+}
+
+/* Drawer Body Content */
+.drawer-content { 
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 16px 24px; 
+}
+
+.empty { 
+    color: #888; 
+    text-align: center; 
+    margin-top: 40px; 
+}
+
+/* Cart Items */
+.cart-item {
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
+    padding: 14px 0; 
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.cart-item img { 
+    width: 56px; 
+    height: 56px; 
+    object-fit: cover; 
+    border-radius: 4px; 
+    background: #f7f7f7; 
+}
+
+.cart-item-info { 
+    flex: 1; 
+}
+
+.cart-item-name { 
+    margin: 0 0 4px; 
+    font-size: 14px; 
+}
+
+.cart-item-price { 
+    margin: 0; 
+    font-size: 13px; 
+    color: #555; 
+}
+
+.remove-btn {
+    background: none; 
+    border: none; 
+    color: #888;
+    text-decoration: underline; 
+    cursor: pointer; 
+    font-size: 12px;
+}
+
+/* Drawer Footer */
+.drawer-footer { 
+    padding: 20px 24px; 
+    border-top: 1px solid #eee; 
+}
+
+.total-row { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 14px; 
+    font-size: 15px; 
+}
+
+.checkout-button {
+    width: 100%; 
+    padding: 14px; 
+    background: #111; 
+    color: #fff;
+    border: none; 
+    cursor: pointer; 
+    letter-spacing: 1px;
+    text-transform: lowercase; 
+    font-size: 14px;
+}
+
+.checkout-button:disabled { 
+    background: #999; 
+    cursor: not-allowed; 
+}

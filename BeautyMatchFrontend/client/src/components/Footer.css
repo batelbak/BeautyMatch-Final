@@ -1,0 +1,15 @@
+.footer {
+  text-align: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #e7e7e7;
+  margin-top: 40px;
+  font-family: 'Arial', sans-serif;
+  color: #555;
+}
+
+.slogan {
+  font-style: italic;
+  font-size: 0.9em;
+  margin-top: 5px;
+}
