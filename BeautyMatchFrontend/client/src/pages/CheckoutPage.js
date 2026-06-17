@@ -52,10 +52,24 @@ const CheckoutPage = () => {
 
         setLoading(true);
         try {
+            // מזהה המשתמש המחובר (השרת דורש userId)
+            const rawUser = JSON.parse(localStorage.getItem('user') || 'null');
+            const user = rawUser?.user || rawUser;
+            const userId = user?.id;
+
+            // ממירים את העגלה למבנה שהשרת מצפה לו: [{ productId, quantity }]
+            const items = cart.map((item) => ({
+                productId: item.id || item._id || item.productId,
+                quantity: item.quantity || 1,
+            }));
+
+            // מאחדים את פרטי המשלוח למחרוזת אחת (השדה shippingAddress הוא STRING)
+            const shippingAddress = `${form.fullName}, ${form.address}, ${form.city}, ${form.phone}`;
+
             await api.post('/orders', {
-                items: cart,
-                total: total,
-                customerDetails: form
+                userId,
+                items,
+                shippingAddress,
             });
 
             clearCart();
@@ -66,6 +80,7 @@ const CheckoutPage = () => {
         } finally {
             setLoading(false);
         }
+
     };
 
     if (cart.length === 0) {
