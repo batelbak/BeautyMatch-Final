@@ -16,7 +16,7 @@ exports.quizRecommendations = async (req, res) => {
 
     const cleanFreeText = typeof freeText === 'string' ? freeText.trim().slice(0, 500) : '';
 
-    // 1. שליפת כל המוצרים מהדאטה-בייס
+    // 1. Load the full product catalog from the DB
     const products = await Product.findAll({
       attributes: ['id', 'name', 'brand', 'category', 'description', 'price', 'imageUrl', 'skinType', 'concern'],
     });
@@ -27,7 +27,10 @@ exports.quizRecommendations = async (req, res) => {
 
     const catalog = products.map((p) => p.toJSON());
 
-    // 2. קריאה ל-AI לקבלת ההמלצות הגולמיות (האובייקט הגדול שראינו בטרמינל)
+    // 2. Ask the AI service for recommendations.
+    // NOTE: aiService already enriches each recommendation with the full
+    // product object from the catalog, so the shape is:
+    //   { summary, routine: { morning, evening }, recommendations: [{ product, reason }] }
     const aiResult = await getRecommendationsFromAI({
       skinType,
       concern,
@@ -35,37 +38,15 @@ exports.quizRecommendations = async (req, res) => {
       catalog,
     });
 
-    // 3. התאמת מבנה הנתונים למה שקוד ה-React (Recommendations.js) מצפה לקבל!
-    // אנחנו בונים אובייקט מובנה עם summary, routine ו-recommendations
+    // 3. Return it straight through — DO NOT rebuild `recommendations` here,
+    // otherwise we lose the full product objects (image, price, brand, ...).
     const formattedResult = {
-      summary: aiResult.summary || "Based on your skin profile, here is your personalized routine.",
+      summary: aiResult.summary || 'Based on your skin profile, here is your personalized routine.',
       routine: aiResult.routine || { morning: [], evening: [] },
-      recommendations: []
+      recommendations: Array.isArray(aiResult.recommendations) ? aiResult.recommendations : [],
     };
 
-    // במידה וה-AI החזיר מערך המלצות, נחבר לכל המלצה את אובייקט ה-product המלא מהדאטה בייס
-    const aiRecommendations = aiResult.recommendations || [];
-
-    formattedResult.recommendations = aiRecommendations.map(rec => {
-      // מחפשים את המוצר המלא בקטלוג לפי ה-ID שה-AI החזיר (או לפי השם אם ה-ID לא תואם)
-      const foundProduct = catalog.find(p => p.id === rec.productId || p.name === rec.name);
-
-      return {
-        reason: rec.reason || "Recommended for your skin type.",
-        product: foundProduct || {
-          id: rec.productId || Math.random(),
-          name: rec.name,
-          brand: "AI Beauty",
-          category: "Skincare",
-          price: 25,
-          imageUrl: "https://via.placeholder.com/240" // ברירת מחדל אם המוצר לא נמצא בקטלוג
-        }
-      };
-    });
-
-    // 4. החזרת התשובה המובנית לפרונטאנד
     return ok(res, formattedResult);
-
   } catch (err) {
     console.error('AI quizRecommendations error:', err);
     return fail(res, 500, 'AI_ERROR', err.message || 'AI service failed');
