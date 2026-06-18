@@ -27,7 +27,7 @@ exports.quizRecommendations = async (req, res) => {
 
     const catalog = products.map((p) => p.toJSON());
 
-    // 2. קריאה ל-AI לקבלת ההמלצות הגולמיות
+    // 2. קריאה ל-AI לקבלת ההמלצות הגולמיות (האובייקט הגדול שראינו בטרמינל)
     const aiResult = await getRecommendationsFromAI({
       skinType,
       concern,
@@ -36,55 +36,34 @@ exports.quizRecommendations = async (req, res) => {
     });
 
     // 3. התאמת מבנה הנתונים למה שקוד ה-React (Recommendations.js) מצפה לקבל!
+    // אנחנו בונים אובייקט מובנה עם summary, routine ו-recommendations
     const formattedResult = {
       summary: aiResult.summary || "Based on your skin profile, here is your personalized routine.",
       routine: aiResult.routine || { morning: [], evening: [] },
       recommendations: []
     };
 
+    // במידה וה-AI החזיר מערך המלצות, נחבר לכל המלצה את אובייקט ה-product המלא מהדאטה בייס
     const aiRecommendations = aiResult.recommendations || [];
 
     formattedResult.recommendations = aiRecommendations.map(rec => {
-      // חיפוש חכם וגמיש: בודק התאמת ID או התאמה חלקית של שם המוצר ללא תלות באותיות גדולות/קטנות
-      const foundProduct = catalog.find(p => {
-        const matchId = String(p.id) === String(rec.productId);
-        const matchName = rec.name && p.name && (
-          p.name.toLowerCase().includes(rec.name.toLowerCase()) ||
-          rec.name.toLowerCase().includes(p.name.toLowerCase())
-        );
-        return matchId || matchName;
-      });
+      // מחפשים את המוצר המלא בקטלוג לפי ה-ID שה-AI החזיר (או לפי השם אם ה-ID לא תואם)
+      const foundProduct = catalog.find(p => p.id === rec.productId || p.name === rec.name);
 
-      // אם מצאנו את המוצר האמיתי בקטלוג - נשלוף את הנתונים והתמונות המקוריות מה-Database
-      if (foundProduct) {
-        return {
-          reason: rec.reason || "Recommended for your skin type.",
-          product: {
-            id: foundProduct.id,
-            name: foundProduct.name,
-            brand: foundProduct.brand || "AI Beauty",
-            category: foundProduct.category,
-            price: foundProduct.price,
-            imageUrl: foundProduct.imageUrl // התמונה האמיתית מה-DB שלך
-          }
-        };
-      }
-
-      // במידה והמוצר לא נמצא (הגנת ברירת מחדל כדי שלא יקרוס, משתמש בתמונה מהסיד)
       return {
         reason: rec.reason || "Recommended for your skin type.",
-        product: {
+        product: foundProduct || {
           id: rec.productId || Math.random(),
-          name: rec.name || "Special Treatment",
+          name: rec.name,
           brand: "AI Beauty",
           category: "Skincare",
           price: 25,
-          imageUrl: "https://i.postimg.cc/Ghh7rwJD/Whats-App-Image-2026-06-01-at-19-47-56-(1).jpg"
+          imageUrl: "https://via.placeholder.com/240" // ברירת מחדל אם המוצר לא נמצא בקטלוג
         }
       };
     });
 
-    // 4. החזרת התשובה המובנית והמלאה לפרונטאנד
+    // 4. החזרת התשובה המובנית לפרונטאנד
     return ok(res, formattedResult);
 
   } catch (err) {
