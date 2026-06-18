@@ -21,7 +21,7 @@ Three user roles are supported:
 
 ```text
 BeautyMatch-Final/
-├── BeautyMachBackend/
+├── backend/              # Node.js + Express Server
 │   ├── src/
 │   │   ├── server.js               # Express + Socket.IO entry point
 │   │   ├── config/
@@ -40,35 +40,36 @@ BeautyMatch-Final/
 │   ├── .env.example
 │   └── package.json
 │
-└── BeautyMatchFrontend/
-    └── client/                     # Create-React-App
-        ├── src/
-        │   ├── pages/
-        │   ├── components/
-        │   ├── context/
-        │   └── services/           # api.js, socket.js
-        ├── .env.example
-        └── package.json
-        
+└── frontend/            # React Application
+    ├── src/                        # React source code
+    │   ├── pages/
+    │   ├── components/
+    │   ├── context/
+    │   └── services/               # api.js, socket.js
+    ├── public/
+    ├── .env.example
+    └── package.json
+├── .gitignore                      # Global gitignore configuration
+└── README.md                       # Project documentation
 ⚙️ Installation
 Prerequisites
 -Node.js 18+
 -MySQL 8+
 -A Groq API key (free at console.groq.com)
 1. Install dependencies:
-cd BeautyMachBackend && npm install
-cd ../BeautyMatchFrontend/client && npm install
+cd backend && npm install
+cd ../frontend && npm install
 
 2. Database setup:
 mysql -u root -p -e "CREATE DATABASE beauty_match;"
-mysql -u root -p beauty_match < BeautyMachBackend/migrations/001-initial-schema.sql
+mysql -u root -p beauty_match < backend/migrations/001-initial-schema.sql
 On first server start, sequelize.sync() will also ensure all tables/columns exist.
 Optional – seed sample products and admin:
-cd BeautyMachBackend && node src/seeders/seed.js
+cd backend && node src/seeders/seed.js
 
 3. Environment variables
 Backend
-Copy BeautyMachBackend/.env.example to BeautyMachBackend/.env and fill in:
+Copy backend/.env.example to backend/.env and fill in:
 Variable,Description
 PORT,Backend port (default 3000)
 CLIENT_URL,Frontend URL for CORS (http://localhost:5173)
@@ -82,21 +83,21 @@ GROQ_API_KEY,Your Groq API key
 GROQ_MODEL,Model name (default llama-3.3-70b-versatile)
 
 Frontend
-Copy BeautyMatchFrontend/client/.env.example to .env:
+Copy frontend/.env.example to .env:
 Variable,Description
 REACT_APP_API_URL,http://localhost:3000/api
 REACT_APP_SOCKET_URL,http://localhost:3000
 
 4. Run the application
 Terminal 1 (Backend):
-cd BeautyMachBackend && npm start
+cd backend && npm start
 Terminal 2 (Frontend):
-cd BeautyMatchFrontend/client && npm start
+cd frontend/ && npm start
 -Frontend: http://localhost:5173
 -Backend: http://localhost:3000
 
 🗄️ ORM Setup (Sequelize)
-Models live in BeautyMachBackend/models/ and are wired in models/index.js.
+Models live in backend/models/ and are wired in models/index.js.
 Model,File,Notes
 User,User.js,customer / logistics
 Admin,Admin.js,separate auth table
@@ -169,7 +170,6 @@ Flow:
 5-The API key lives only in the backend .env (GROQ_API_KEY) and is never exposed to the browser.
 
 
-  
 ⚠️ Known Limitations
 No automated tests yet.
 -AI calls are not cached – every quiz submission hits Groq.
