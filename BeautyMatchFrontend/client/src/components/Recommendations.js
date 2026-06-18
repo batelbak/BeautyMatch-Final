@@ -100,7 +100,7 @@ const Recommendations = () => {
                                 </p>
                             </div>
 
-                            {/* כפתור הוספה לעגלה קלאסי ונקי, מחובר ל-Context */}
+
                             <button
                                 onClick={() => handleAddToCart(product)}
                                 style={{
