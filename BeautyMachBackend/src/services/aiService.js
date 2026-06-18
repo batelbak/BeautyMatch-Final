@@ -1,28 +1,41 @@
-const OpenAI = require('openai');
+// src/services/aiService.js
+const Groq = require('groq-sdk');
 const { SYSTEM_PROMPT, buildUserPrompt } = require('./aiPrompts');
 
-const client = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-});
-
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
+/**
+ * Asks the AI for a personalized routine, then enriches the response
+ * with full product data from the catalog so the frontend can render
+ * { product, reason } cards directly.
+ */
 async function getRecommendationsFromAI({ skinType, concern, freeText, catalog }) {
   if (!process.env.GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY is missing in .env file');
+    throw new Error('GROQ_API_KEY is not configured');
   }
 
-  const userPrompt = buildUserPrompt({ skinType, concern, freeText, catalog });
+  // Lookup maps for enrichment + fallback
+  const byId = new Map(catalog.map((p) => [String(p.id), p]));
+  const byName = new Map(catalog.map((p) => [String(p.name).toLowerCase().trim(), p]));
 
-  console.log('\n========== 🤖 AI REQUEST ==========');
-  console.log('USER (first 300):', userPrompt.substring(0, 300) + '...');
-  console.log('===================================\n');
+  // Trim catalog to keep the prompt small
+  const slimCatalog = catalog.map((p) => ({
+    id: p.id,
+    name: p.name,
+    brand: p.brand,
+    category: p.category,
+    skinType: p.skinType,
+    concern: p.concern,
+    price: p.price,
+    description: (p.description || '').slice(0, 160),
+  }));
 
-  const completion = await client.chat.completions.create({
+  const userPrompt = buildUserPrompt({ skinType, concern, freeText, catalog: slimCatalog });
+
+  const completion = await groq.chat.completions.create({
     model: MODEL,
     temperature: 0.7,
-    max_tokens: 2000,
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -30,39 +43,84 @@ async function getRecommendationsFromAI({ skinType, concern, freeText, catalog }
     ],
   });
 
-  const raw = completion.choices[0]?.message?.content || '{}';
-  console.log('🤖 AI RAW RESPONSE:', raw.substring(0, 400) + '...\n');
+  const raw = completion.choices?.[0]?.message?.content || '{}';
+  console.log('\n=================================');
+  console.log('🤖 AI RAW RESPONSE:', raw);
+  console.log('=================================\n');
 
   let parsed;
   try {
     parsed = JSON.parse(raw);
-  } catch (err) {
-    console.error('❌ JSON parse failed:', err.message);
-    throw new Error('The AI returned an invalid response');
+  } catch (e) {
+    console.error('❌ Failed to parse AI JSON:', e.message);
+    parsed = {};
   }
 
-  // 🔑 Enrich AI recommendations with full product data from catalog
-  const catalogById = new Map(catalog.map((p) => [p.id, p]));
-  const rawRecs = Array.isArray(parsed.recommendations) ? parsed.recommendations : [];
-  const recommendations = rawRecs
-    .map((rec) => {
-      const product = catalogById.get(Number(rec.productId));
-      if (!product) return null;
-      return { product, reason: rec.reason || '' };
-    })
-    .filter(Boolean);
-
-  return {
-    skinType,
-    concern,
-    freeText: freeText || '',
-    summary: parsed.summary || '',
-    routine: {
-      morning: Array.isArray(parsed.routine?.morning) ? parsed.routine.morning : [],
-      evening: Array.isArray(parsed.routine?.evening) ? parsed.routine.evening : [],
-    },
-    recommendations,
+  const summary = parsed.summary || '';
+  const routine = {
+    morning: Array.isArray(parsed.routine?.morning) ? parsed.routine.morning : [],
+    evening: Array.isArray(parsed.routine?.evening) ? parsed.routine.evening : [],
   };
+
+  // Enrich AI recommendations -> { product, reason }
+  const aiRecs = Array.isArray(parsed.recommendations) ? parsed.recommendations : [];
+  const enriched = [];
+  const seenIds = new Set();
+
+  for (const rec of aiRecs) {
+    let product = null;
+    if (rec.productId != null && byId.has(String(rec.productId))) {
+      product = byId.get(String(rec.productId));
+    } else if (rec.name && byName.has(String(rec.name).toLowerCase().trim())) {
+      product = byName.get(String(rec.name).toLowerCase().trim());
+    }
+    if (product && !seenIds.has(product.id)) {
+      seenIds.add(product.id);
+      enriched.push({
+        product,
+        reason: rec.reason || 'Recommended based on your skin profile.',
+      });
+    }
+  }
+
+  // Fallback: if AI returned 0 valid products, filter catalog by skinType/concern
+  if (enriched.length === 0) {
+    console.warn('⚠️ AI returned no valid products — using catalog fallback');
+    const matches = catalog.filter((p) => {
+      const stOk =
+        !p.skinType ||
+        String(p.skinType).toLowerCase() === String(skinType).toLowerCase() ||
+        String(p.skinType).toLowerCase() === 'all';
+      const cOk =
+        !p.concern ||
+        String(p.concern).toLowerCase().includes(String(concern).toLowerCase());
+      return stOk || cOk;
+    });
+    for (const product of matches.slice(0, 4)) {
+      enriched.push({
+        product,
+        reason: `Selected for ${skinType} skin with focus on ${concern}.`,
+      });
+    }
+  }
+
+  const result = {
+    summary,
+    routine,
+    recommendations: enriched,
+    freeText: freeText || '',
+  };
+
+  console.log('📦 FINAL RESPONSE SENT TO FRONTEND:');
+  console.log(JSON.stringify({
+    summary: (result.summary || '').slice(0, 80) + '...',
+    morningSteps: result.routine.morning.length,
+    eveningSteps: result.routine.evening.length,
+    productCount: result.recommendations.length,
+    productNames: result.recommendations.map((r) => r.product.name),
+  }, null, 2));
+
+  return result;
 }
 
 module.exports = { getRecommendationsFromAI };
