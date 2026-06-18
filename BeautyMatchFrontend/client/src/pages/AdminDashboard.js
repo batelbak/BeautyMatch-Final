@@ -1,5 +1,3 @@
-// src/pages/AdminDashboard.js
-
 import socket, { connectSocket } from '../services/socket';
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
@@ -16,17 +14,61 @@ const EMPTY_USER = { firstName: '', lastName: '', email: '', userRole: 'user', p
  * Provides CRUD operations for products and user management functionalities.
  */
 const AdminDashboard = () => {
+    // Helper function to show elegant banners matching the client-side style exactly
+    const showSuccessBanner = (message) => {
+      if (typeof window !== 'undefined') {
+        const banner = document.createElement('div');
+        banner.textContent = `${message.toUpperCase()} ✓`;
+        Object.assign(banner.style, {
+          position: 'fixed',
+          bottom: '30px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#1c1c1c', // Deep charcoal black from customer layout
+          color: '#ffffff',
+          padding: '16px 32px',
+          borderRadius: '0px', // Square clean edges
+          zIndex: 9999,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          fontFamily: "'Montserrat', 'Helvetica Neue', sans-serif",
+          letterSpacing: '2px', // Tracking spacing matching the client catalog
+          fontSize: '13px',
+          fontWeight: '500',
+          textAlign: 'center',
+          minWidth: '320px'
+        });
+        document.body.appendChild(banner);
+        setTimeout(() => {
+          banner.style.opacity = '0';
+          banner.style.transition = 'opacity 0.4s ease';
+          setTimeout(() => banner.remove(), 400);
+        }, 3500);
+      }
+    };
+
     useEffect(() => {
       connectSocket();
       const onNewOrder = (order) => {
         console.log('🆕 order:new', order);
         if (typeof window !== 'undefined') {
           const banner = document.createElement('div');
-          banner.textContent = `🛒 הזמנה חדשה #${order.id} – ${order.total}₪`;
+          banner.textContent = `NEW ORDER #${order.id} – ${order.total}₪ ✓`;
           Object.assign(banner.style, {
-            position: 'fixed', top: '80px', right: '20px', background: '#e91e63',
-            color: '#fff', padding: '12px 18px', borderRadius: '10px', zIndex: 9999,
-            boxShadow: '0 4px 16px rgba(0,0,0,.15)'
+            position: 'fixed',
+            bottom: '90px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#1c1c1c',
+            color: '#fff',
+            padding: '16px 32px',
+            borderRadius: '0px',
+            zIndex: 9999,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            fontFamily: "'Montserrat', sans-serif",
+            letterSpacing: '2px',
+            fontSize: '13px',
+            minWidth: '320px',
+            textAlign: 'center'
           });
           document.body.appendChild(banner);
           setTimeout(() => banner.remove(), 4500);
@@ -153,8 +195,10 @@ const AdminDashboard = () => {
 
       if (editingId) {
         await api.put(`${endpoint}/${editingId}`, payload);
+        showSuccessBanner(modalType === 'product' ? 'product updated successfully' : 'user updated successfully');
       } else {
         await api.post(endpoint, payload);
+        showSuccessBanner(modalType === 'product' ? 'new product added to collection' : 'new user created successfully');
       }
       closeModal();
       modalType === 'product' ? fetchProducts() : fetchUsers();
@@ -169,6 +213,7 @@ const AdminDashboard = () => {
     try {
       const endpoint = type === 'product' ? '/products' : '/users';
       await api.delete(`${endpoint}/${id}`);
+      showSuccessBanner(type === 'product' ? 'product removed from database' : 'user deleted from database');
       type === 'product' ? fetchProducts() : fetchUsers();
     } catch (err) {
       alert('Delete operation failed.');
@@ -179,12 +224,6 @@ const userColumns = [
     { header: 'Email', field: 'email' },
     { header: 'Role', field: 'role' },
 ];
-//  const userColumns = [
-//    { header: 'First Name', field: 'firstName' },
-//    { header: 'Last Name', field: 'lastName' },
-//    { header: 'Email', field: 'email' },
-//    { header: 'Role', field: 'userRole' },
-//  ];
 
   return (
     <div className="admin-container">

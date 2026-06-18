@@ -1,0 +1,160 @@
+{
+  "info": {
+    "name": "BeautyMatch API",
+    "description": "Full collection for BeautyMatch backend (Users, Admins, Products, Orders, AI, Settings).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" }
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/register",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"123456\",\n  \"skinType\": \"oily\",\n  \"concern\": \"acne\"\n}" }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"123456\"\n}" }
+          }
+        },
+        { "name": "Get All Users", "request": { "method": "GET", "url": "{{baseUrl}}/users" } },
+        { "name": "Get User By Id", "request": { "method": "GET", "url": "{{baseUrl}}/users/1" } },
+        { "name": "Get User Orders (JOIN)", "request": { "method": "GET", "url": "{{baseUrl}}/users/1/orders" } },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/1",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Name\"\n}" }
+          }
+        },
+        { "name": "Delete User", "request": { "method": "DELETE", "url": "{{baseUrl}}/users/1" } }
+      ]
+    },
+    {
+      "name": "Admins",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/admins/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@beautymatch.com\",\n  \"password\": \"admin123\"\n}" }
+          }
+        },
+        {
+          "name": "Create Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/admins",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"New Admin\",\n  \"email\": \"new@admin.com\",\n  \"password\": \"admin123\",\n  \"permissions\": \"products\"\n}" }
+          }
+        },
+        { "name": "Get All Admins", "request": { "method": "GET", "url": "{{baseUrl}}/admins" } },
+        { "name": "Delete Admin", "request": { "method": "DELETE", "url": "{{baseUrl}}/admins/1" } }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        { "name": "Get All Products", "request": { "method": "GET", "url": "{{baseUrl}}/products" } },
+        { "name": "Get Product By Id", "request": { "method": "GET", "url": "{{baseUrl}}/products/1" } },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/products",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Hydrating Serum\",\n  \"brand\": \"BeautyMatch\",\n  \"category\": \"serum\",\n  \"description\": \"Lightweight daily hydration\",\n  \"price\": 89.9,\n  \"stock\": 50,\n  \"imageUrl\": \"https://example.com/serum.jpg\",\n  \"skinType\": \"dry\",\n  \"concern\": \"hydration\"\n}" }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/products/1",
+            "body": { "mode": "raw", "raw": "{\n  \"price\": 99.9,\n  \"stock\": 30\n}" }
+          }
+        },
+        { "name": "Delete Product", "request": { "method": "DELETE", "url": "{{baseUrl}}/products/1" } }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        { "name": "Get All Orders", "request": { "method": "GET", "url": "{{baseUrl}}/orders" } },
+        { "name": "Get Order By Id", "request": { "method": "GET", "url": "{{baseUrl}}/orders/1" } },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/orders",
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"shippingAddress\": \"Allenby 1, Tel Aviv\",\n  \"items\": [\n    { \"productId\": 1, \"quantity\": 2 },\n    { \"productId\": 2, \"quantity\": 1 }\n  ]\n}" }
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/orders/1/status",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"processing\"\n}" }
+          }
+        },
+        { "name": "Mark Delivered", "request": { "method": "PATCH", "url": "{{baseUrl}}/orders/1/deliver" } },
+        { "name": "Delete Order", "request": { "method": "DELETE", "url": "{{baseUrl}}/orders/1" } }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "Quiz Recommendations",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/ai/quiz-recommendations",
+            "body": { "mode": "raw", "raw": "{\n  \"skinType\": \"oily\",\n  \"concern\": \"acne\",\n  \"freeText\": \"I prefer fragrance-free products\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        { "name": "Get Settings", "request": { "method": "GET", "url": "{{baseUrl}}/settings" } },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/settings",
+            "body": { "mode": "raw", "raw": "{\n  \"siteName\": \"BeautyMatch\",\n  \"currency\": \"ILS\"\n}" }
+          }
+        }
+      ]
+    }
+  ]
+}

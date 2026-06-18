@@ -49,6 +49,7 @@ BeautyMatch-Final/
         │   └── services/           # api.js, socket.js
         ├── .env.example
         └── package.json
+        
 ⚙️ Installation
 Prerequisites
 -Node.js 18+
@@ -163,6 +164,12 @@ Flow:
 3-aiService.js calls Groq (llama-3.3-70b-versatile) with the catalog embedded in the prompt and asks for a personalized morning/evening routine.
 4-The response is enriched with full product objects and returned to the client.
 5-The API key lives only in the backend .env (GROQ_API_KEY) and is never exposed to the browser.
+
+Why an LLM Agent instead of regular SQL Queries?
+
+-Unstructured Text Parsing: Understands nuanced user statements (e.g., "My skin feels tight after washing and I look tired") that raw SQL keywords cannot grasp.
+-Synergy & Contraindications: The agent handles product safety logic—such as scheduling active ingredients logically while separating conflicting items (e.g., Vitamin C for morning, Retinol for night).
+-Dynamic Contextual Justification: Generates dynamic, natural-language humanized reasoning for every item picked based explicitly on the user's questionnaire parameters.
 
 ⚠️ Known Limitations
 No automated tests yet.
