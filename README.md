@@ -70,7 +70,7 @@ cd BeautyMachBackend && node src/seeders/seed.js
 Backend
 Copy BeautyMachBackend/.env.example to BeautyMachBackend/.env and fill in:
 Variable,Description
-PORT,Backend port (default 5000)
+PORT,Backend port (default 3000)
 CLIENT_URL,Frontend URL for CORS (http://localhost:5173)
 DB_HOST,MySQL host (localhost)
 DB_PORT,MySQL port (3306)
@@ -84,8 +84,8 @@ GROQ_MODEL,Model name (default llama-3.3-70b-versatile)
 Frontend
 Copy BeautyMatchFrontend/client/.env.example to .env:
 Variable,Description
-REACT_APP_API_URL,http://localhost:5000/api
-REACT_APP_SOCKET_URL,http://localhost:5000
+REACT_APP_API_URL,http://localhost:3000/api
+REACT_APP_SOCKET_URL,http://localhost:3000
 
 4. Run the application
 Terminal 1 (Backend):
@@ -93,7 +93,7 @@ cd BeautyMachBackend && npm start
 Terminal 2 (Frontend):
 cd BeautyMatchFrontend/client && npm start
 -Frontend: http://localhost:5173
--Backend: http://localhost:5000
+-Backend: http://localhost:3000
 
 🗄️ ORM Setup (Sequelize)
 Models live in BeautyMachBackend/models/ and are wired in models/index.js.
@@ -141,8 +141,11 @@ Settings / Health
 Health: GET /api/health
 A full Postman collection is included in BeautyMatch.postman_collection.json.
 
-🔌 WebSocket Feature (Socket.IO)
-The warehouse and admin dashboards receive new orders and status updates in real time.
+WebSocket Feature (Real-Time Updates):
+
+-Using Socket.IO, the application facilitates live data streams across clients:
+-When a customer successfully places an order, a custom order:new event is emitted.
+-All active staff room members (Logistics and Admin accounts) receive an instantaneous, reactive notification and UI card injection on their dashboards without a manual page reload.
 
 Custom Events:
 Event,Direction,Payload
@@ -165,12 +168,8 @@ Flow:
 4-The response is enriched with full product objects and returned to the client.
 5-The API key lives only in the backend .env (GROQ_API_KEY) and is never exposed to the browser.
 
-Why an LLM Agent instead of regular SQL Queries?
 
--Unstructured Text Parsing: Understands nuanced user statements (e.g., "My skin feels tight after washing and I look tired") that raw SQL keywords cannot grasp.
--Synergy & Contraindications: The agent handles product safety logic—such as scheduling active ingredients logically while separating conflicting items (e.g., Vitamin C for morning, Retinol for night).
--Dynamic Contextual Justification: Generates dynamic, natural-language humanized reasoning for every item picked based explicitly on the user's questionnaire parameters.
-
+  
 ⚠️ Known Limitations
 No automated tests yet.
 -AI calls are not cached – every quiz submission hits Groq.
