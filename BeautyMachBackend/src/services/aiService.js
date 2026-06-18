@@ -1,64 +1,58 @@
-//const { GoogleGenerativeAI } = require('@google/generative-ai');
-//const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-//
-//async function getRecommendationsFromAI({ skinType, concern, catalog }) {
-//  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-//
-//  const catalogText = catalog
-//    .map((p) => `- id:${p.id} | ${p.name} (${p.brand}) | ${p.category} | ${p.price}₪ | skin:${p.skinType} | concern:${p.concern} | ${p.description}`)
-//    .join('\n');
-//
-//  const prompt = `You are a skincare expert. The user has skin type "${skinType}" and main concern "${concern}".
-//From the following product catalog, recommend the 3 best products. Return ONLY valid JSON with this shape:
-//{ "recommendations": [ { "id": <productId>, "reason": "<short reason>" } ] }
-//
-//Catalog:
-//${catalogText}`;
-//
-//  const result = await model.generateContent(prompt);
-//  const text = result.response.text();
-//  const jsonMatch = text.match(/\{[\s\S]*\}/);
-//  const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { recommendations: [] };
-//
-//  // הצמדת פרטי המוצר המלאים
-//  const full = parsed.recommendations.map((r) => {
-//    const product = catalog.find((p) => p.id === r.id);
-//    return { product, reason: r.reason };
-//  }).filter((r) => r.product);
-//
-//  return { skinType, concern, recommendations: full };
-//}
-//
-//module.exports = { getRecommendationsFromAI };
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const OpenAI = require('openai');
+const { SYSTEM_PROMPT, buildUserPrompt } = require('./aiPrompts');
 
-async function getRecommendationsFromAI({ skinType, concern, catalog }) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const client = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: 'https://api.groq.com/openai/v1',
+});
 
-  const catalogText = catalog
-    .map((p) => `- id:${p.id} | ${p.name} (${p.brand}) | ${p.category} | ${p.price}₪ | skin:${p.skinType} | concern:${p.concern} | ${p.description}`)
-    .join('\n');
+const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
-  const prompt = `You are a skincare expert. The user has skin type "${skinType}" and main concern "${concern}".
-From the following product catalog, recommend the 3 best products. Return ONLY valid JSON with this shape:
-{ "recommendations": [ { "id": <productId>, "reason": "<short reason>" } ] }
+async function getRecommendationsFromAI({ skinType, concern, freeText, catalog }) {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY חסר בקובץ .env');
+  }
 
-Catalog:
-${catalogText}`;
+  const userPrompt = buildUserPrompt({ skinType, concern, freeText, catalog });
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { recommendations: [] };
+  console.log('\n========== 🤖 AI REQUEST ==========');
+  console.log('SYSTEM:', SYSTEM_PROMPT.substring(0, 100) + '...');
+  console.log('USER:', userPrompt.substring(0, 300) + '...');
+  console.log('===================================\n');
 
-  // הצמדת פרטי המוצר המלאים
-  const full = parsed.recommendations.map((r) => {
-    const product = catalog.find((p) => p.id === r.id);
-    return { product, reason: r.reason };
-  }).filter((r) => r.product);
+  const completion = await client.chat.completions.create({
+    model: MODEL,
+    temperature: 0.7,
+    max_tokens: 2000,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ],
+  });
 
-  return { skinType, concern, recommendations: full };
+  const raw = completion.choices[0]?.message?.content || '{}';
+  console.log('🤖 AI RAW RESPONSE:', raw.substring(0, 300) + '...\n');
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    console.error('❌ JSON parse failed:', err.message);
+    throw new Error('ה-AI החזיר תשובה לא תקינה');
+  }
+
+  return {
+    skinType,
+    concern,
+    freeText: freeText || '',
+    summary: parsed.summary || '',
+    routine: {
+      morning: Array.isArray(parsed.routine?.morning) ? parsed.routine.morning : [],
+      evening: Array.isArray(parsed.routine?.evening) ? parsed.routine.evening : [],
+    },
+    recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+  };
 }
 
 module.exports = { getRecommendationsFromAI };

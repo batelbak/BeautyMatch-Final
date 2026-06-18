@@ -1,63 +1,41 @@
-const fs = require('fs');
-const path = require('path');
+// src/controllers/aiController.js
 const { ok, fail } = require('../utils/response');
-const DATA_FILE = path.join(__dirname, '..', 'data', 'settings.json');
-const defaultSettings = {
-  username: 'Guest',
-  email: 'user@example.com',
-  theme: 'light',
-  notifications: true,
-  language: 'en',
-};
-function loadAll() {
+const { Product } = require('../../models');
+const { getRecommendationsFromAI } = require('../services/aiService');
+
+/**
+ * POST /api/ai/quiz-recommendations
+ * Body: { skinType, concern, freeText? }
+ * Loads the product catalog from the DB and asks the AI for a personalized routine.
+ */
+exports.quizRecommendations = async (req, res) => {
   try {
-    if (!fs.existsSync(DATA_FILE)) return {};
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8') || '{}');
+    const { skinType, concern, freeText } = req.body || {};
+    if (!skinType || !concern) {
+      return fail(res, 400, 'VALIDATION_ERROR', 'skinType and concern are required');
+    }
+
+    // Load catalog from DB so the AI only recommends real products we actually sell
+    const products = await Product.findAll({
+      attributes: ['id', 'name', 'brand', 'category', 'description', 'price', 'imageUrl', 'skinType', 'concern'],
+    });
+
+    if (!products.length) {
+      return fail(res, 404, 'EMPTY_CATALOG', 'No products available to recommend');
+    }
+
+    const catalog = products.map((p) => p.toJSON());
+
+    const result = await getRecommendationsFromAI({
+      skinType,
+      concern,
+      freeText,
+      catalog,
+    });
+
+    return ok(res, result);
   } catch (err) {
-    console.error('Failed to read settings file:', err);
-    return {};
-  }
-}
-function saveAll(all) {
-  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(all, null, 2));
-}
-function resolveEmail(req) {
-  return (
-    req.headers['x-user-email'] ||
-    req.query.email ||
-    (req.body && req.body.email) ||
-    'default@example.com'
-  );
-}
-exports.getSettings = (req, res) => {
-  try {
-    const email = resolveEmail(req);
-    const all = loadAll();
-    const settings = all[email] || { ...defaultSettings, email };
-    return ok(res, settings);
-  } catch (e) {
-    return fail(res, 500, 'INTERNAL_ERROR', e.message);
-  }
-};
-exports.updateSettings = (req, res) => {
-  try {
-    const email = resolveEmail(req);
-    const { username, theme, notifications, language } = req.body;
-    const all = loadAll();
-    const current = all[email] || { ...defaultSettings, email };
-    const updated = {
-      ...current,
-      email,
-      ...(username !== undefined && { username }),
-      ...(theme !== undefined && { theme }),
-      ...(notifications !== undefined && { notifications: !!notifications }),
-      ...(language !== undefined && { language }),
-    };
-    all[email] = updated;
-    saveAll(all);
-    return ok(res, updated);
-  } catch (e) {
-    return fail(res, 500, 'INTERNAL_ERROR', e.message);
+    console.error('AI quizRecommendations error:', err);
+    return fail(res, 500, 'AI_ERROR', err.message || 'AI service failed');
   }
 };

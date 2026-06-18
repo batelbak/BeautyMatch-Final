@@ -1,7 +1,6 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { sequelize, User, Admin, Product } = require('../models');
-
+const { sequelize, User, Admin, Product } = require('../../models');
 async function seed() {
   await sequelize.sync({ force: true });
   console.log('✅ Tables created');
