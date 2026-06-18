@@ -1,18 +1,63 @@
-const { Product } = require('../models');
-const { getRecommendationsFromAI } = require('../services/aiService');
-
-exports.quizRecommendations = async (req, res) => {
+const fs = require('fs');
+const path = require('path');
+const { ok, fail } = require('../utils/response');
+const DATA_FILE = path.join(__dirname, '..', 'data', 'settings.json');
+const defaultSettings = {
+  username: 'Guest',
+  email: 'user@example.com',
+  theme: 'light',
+  notifications: true,
+  language: 'en',
+};
+function loadAll() {
   try {
-    const { skinType, concern } = req.body;
-    if (!skinType || !concern) return res.status(400).json({ message: 'skinType and concern are required' });
-
-    const catalog = await Product.findAll({
-      attributes: ['id', 'name', 'brand', 'category', 'price', 'skinType', 'concern', 'description'],
-    });
-
-    const result = await getRecommendationsFromAI({ skinType, concern, catalog });
-    res.json(result);
+    if (!fs.existsSync(DATA_FILE)) return {};
+    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8') || '{}');
+  } catch (err) {
+    console.error('Failed to read settings file:', err);
+    return {};
+  }
+}
+function saveAll(all) {
+  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+  fs.writeFileSync(DATA_FILE, JSON.stringify(all, null, 2));
+}
+function resolveEmail(req) {
+  return (
+    req.headers['x-user-email'] ||
+    req.query.email ||
+    (req.body && req.body.email) ||
+    'default@example.com'
+  );
+}
+exports.getSettings = (req, res) => {
+  try {
+    const email = resolveEmail(req);
+    const all = loadAll();
+    const settings = all[email] || { ...defaultSettings, email };
+    return ok(res, settings);
   } catch (e) {
-    res.status(500).json({ message: e.message });
+    return fail(res, 500, 'INTERNAL_ERROR', e.message);
+  }
+};
+exports.updateSettings = (req, res) => {
+  try {
+    const email = resolveEmail(req);
+    const { username, theme, notifications, language } = req.body;
+    const all = loadAll();
+    const current = all[email] || { ...defaultSettings, email };
+    const updated = {
+      ...current,
+      email,
+      ...(username !== undefined && { username }),
+      ...(theme !== undefined && { theme }),
+      ...(notifications !== undefined && { notifications: !!notifications }),
+      ...(language !== undefined && { language }),
+    };
+    all[email] = updated;
+    saveAll(all);
+    return ok(res, updated);
+  } catch (e) {
+    return fail(res, 500, 'INTERNAL_ERROR', e.message);
   }
 };
