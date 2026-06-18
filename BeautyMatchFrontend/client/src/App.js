@@ -1,4 +1,6 @@
 import React from 'react';
+import Recommendations from './components/Recommendations';
+
 import RequestAccessPage from './pages/RequestAccessPage';
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
@@ -49,6 +51,7 @@ function App() {
                         <Route path="/checkout" element={<CheckoutPage />} />
                         <Route path="/order-success" element={<OrderSuccessPage />} />
                         <Route path="/quiz" element={<QuizPage />} />
+                        <Route path="/recommendations" element={<Recommendations />} />
                         <Route path="/settings" element={<SettingsPage />} />
                     </Route>
                 </Routes>

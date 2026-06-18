@@ -14,7 +14,7 @@ const QuizPage = () => {
         setLoading(true);
         try {
             const { data } = await api.post('/ai/quiz-recommendations', answers);
-            navigate('/recommendations', { state: { result: data.result, answers } });
+            navigate('/recommendations', { state: { result: data.data, answers } });
         } catch (err) {
             console.error(err);
             setError(err?.response?.data?.message || 'Failed to fetch recommendations');
