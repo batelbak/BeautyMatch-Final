@@ -15,7 +15,8 @@ exports.quizRecommendations = async (req, res) => {
       return fail(res, 400, 'VALIDATION_ERROR', 'skinType and concern are required');
     }
 
-    // Load catalog from DB so the AI only recommends real products we actually sell
+    const cleanFreeText = typeof freeText === 'string' ? freeText.trim().slice(0, 500) : '';
+
     const products = await Product.findAll({
       attributes: ['id', 'name', 'brand', 'category', 'description', 'price', 'imageUrl', 'skinType', 'concern'],
     });
@@ -29,7 +30,7 @@ exports.quizRecommendations = async (req, res) => {
     const result = await getRecommendationsFromAI({
       skinType,
       concern,
-      freeText,
+      freeText: cleanFreeText,
       catalog,
     });
 

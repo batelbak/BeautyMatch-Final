@@ -10,14 +10,13 @@ const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 async function getRecommendationsFromAI({ skinType, concern, freeText, catalog }) {
   if (!process.env.GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY חסר בקובץ .env');
+    throw new Error('GROQ_API_KEY is missing in .env file');
   }
 
   const userPrompt = buildUserPrompt({ skinType, concern, freeText, catalog });
 
   console.log('\n========== 🤖 AI REQUEST ==========');
-  console.log('SYSTEM:', SYSTEM_PROMPT.substring(0, 100) + '...');
-  console.log('USER:', userPrompt.substring(0, 300) + '...');
+  console.log('USER (first 300):', userPrompt.substring(0, 300) + '...');
   console.log('===================================\n');
 
   const completion = await client.chat.completions.create({
@@ -32,15 +31,26 @@ async function getRecommendationsFromAI({ skinType, concern, freeText, catalog }
   });
 
   const raw = completion.choices[0]?.message?.content || '{}';
-  console.log('🤖 AI RAW RESPONSE:', raw.substring(0, 300) + '...\n');
+  console.log('🤖 AI RAW RESPONSE:', raw.substring(0, 400) + '...\n');
 
   let parsed;
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
     console.error('❌ JSON parse failed:', err.message);
-    throw new Error('ה-AI החזיר תשובה לא תקינה');
+    throw new Error('The AI returned an invalid response');
   }
+
+  // 🔑 Enrich AI recommendations with full product data from catalog
+  const catalogById = new Map(catalog.map((p) => [p.id, p]));
+  const rawRecs = Array.isArray(parsed.recommendations) ? parsed.recommendations : [];
+  const recommendations = rawRecs
+    .map((rec) => {
+      const product = catalogById.get(Number(rec.productId));
+      if (!product) return null;
+      return { product, reason: rec.reason || '' };
+    })
+    .filter(Boolean);
 
   return {
     skinType,
@@ -51,7 +61,7 @@ async function getRecommendationsFromAI({ skinType, concern, freeText, catalog }
       morning: Array.isArray(parsed.routine?.morning) ? parsed.routine.morning : [],
       evening: Array.isArray(parsed.routine?.evening) ? parsed.routine.evening : [],
     },
-    recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+    recommendations,
   };
 }
 
